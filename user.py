@@ -1,7 +1,10 @@
 # encoding=utf-8
 import time
 import base64
+import socket
 import hashlib
+import threading
+import json
 import rsa
 
 import MyQR.myqr as qr
@@ -11,6 +14,9 @@ class User(object):
     def __init__(self):
         self.username = 'test1234'
         self.passwd = 'Abcd@1234'
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.bind(('127.0.0.1', 45678))
+        self.s.listen(10)
 
     def rsaEncrypt(self, str):
         # 生成公钥、私钥
@@ -30,9 +36,9 @@ class User(object):
     def generatePayID(self):
         now = time.strftime('%Y-%m-%d %H:%M', time.localtime(time.time()))
         ID = (self.username+self.passwd+now).encode('utf-8')
-        md5 = hashlib.md5(ID).hexdigest()
-        print(md5)
-        return md5
+        payID = hashlib.md5(ID).hexdigest()
+        print(payID)
+        return payID
 
     def generateQRcode(self):
         ID = self.generatePayID()
@@ -42,8 +48,35 @@ class User(object):
     def signature(self):
         pass
 
-    def confirm(self):
-        pass
+    def listen(self):
+        print('listen')
+
+        # 接受一个新连接:
+        sock, addr = self.s.accept()
+        print('server')
+        # 创建新线程来处理TCP连接:
+        t = threading.Thread(target=self.confirm, args=(sock, addr))
+        t.start()
+
+    def confirm(self, sock, addr):
+        try:
+            print('Accept new connection from %s:%s...' % addr)
+
+            data = sock.recv(1024)
+            # print(data)
+            data = json.loads(data.decode())
+
+            # 用户确认是否付款
+            flag = input('OK?')
+            if flag == 'yes':
+                data['ack'] = True
+
+            sock.send(json.dumps(data).encode())
+            sock.close()
+            print('Connection from %s:%s closed.' % addr)
+
+        except Exception as msg:
+            print(msg)
 
 
 if __name__ == '__main__':
@@ -56,4 +89,5 @@ if __name__ == '__main__':
     # user.generatePayID()
     # time.sleep(60)
     # user.generatePayID()
-    user.generateQRcode()
+    # user.generateQRcode()
+    user.listen()
