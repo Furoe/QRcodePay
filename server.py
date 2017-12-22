@@ -14,21 +14,19 @@ class Server(object):
         self.s_shop.listen(10)
 
         # test,用户名与密码存储在这里，这是demo，故不考虑这些的处理
-        self.users = [{'username': 'test1234', 'passwd': 'Abcd@1234', 'status': False}]
+        self.users = [{'username': 'test1234', 'passwd': 'Abcd@1234'}]
 
     def listen(self):
-        print('listen')
+        print('[status] listening')
         while True:
             # 接受一个新连接:
             sock, addr = self.s_shop.accept()
-            print('shop')
             # 创建新线程来处理TCP连接:
             t = threading.Thread(target=self.shopconn, args=(sock, addr))
             t.start()
 
     def shopconn(self, sock, addr):
-        print('Accept new connection from %s:%s...' % addr)
-        sock.send('Welcome!'.encode())
+        print('[status] Accept new connection from %s:%s...' % addr)
 
         data = sock.recv(1024)
         data = json.loads(data)
@@ -49,11 +47,15 @@ class Server(object):
                     data_user = self.confirm(data)
                     data_user = json.loads(data_user)
                     if data_user.get('ack'):
-                        print('pay success')
+                        # 在这里进行转账操作
+                        print('[pay info] pay success')
+                        sock.send(u'交易成功'.encode('utf-8'))
+
                     else:
-                        print('pay fail')
+                        print('[pay info] pay fail')
+                        sock.send(u'交易失败'.encode('utf-8'))
         sock.close()
-        print('Connection from %s:%s closed.' % addr)
+        print('[status] Connection from %s:%s closed.' % addr)
 
     def confirm(self, data):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

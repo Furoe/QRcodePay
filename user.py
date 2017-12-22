@@ -18,6 +18,27 @@ class User(object):
         self.s.bind(('127.0.0.1', 45678))
         self.s.listen(10)
 
+        self.touse = ['name', 'price', 'username', 'ack']
+        self.toshow = {'name': '商家', 'price': '订单总额', 'username': '用户名', 'ack': '支付状态'}
+
+    def start(self):
+        try:
+            while True:
+                print('-'*40)
+                ans = input('是否生成一张付款码以付款？(yes/no)\n')
+                if ans == 'yes':
+                    t = threading.Thread(target=self.generateQRcode)
+                    t.start()
+                    print('生成付款码成功(当前分钟内有效)')
+                    # 监听付款过程服务器端的信息
+                    self.listen()
+                elif ans == 'no':
+                    print('你拒绝生成一张付款码')
+                else:
+                    print('输入错误')
+        except Exception as msg:
+            print(msg)
+
     def rsaEncrypt(self, str):
         # 生成公钥、私钥
         pubkey, privkey = rsa.newkeys(512)
@@ -49,31 +70,38 @@ class User(object):
         pass
 
     def listen(self):
-        print('listen')
+        print('waiting...')
 
         # 接受一个新连接:
         sock, addr = self.s.accept()
-        print('server')
-        # 创建新线程来处理TCP连接:
-        t = threading.Thread(target=self.confirm, args=(sock, addr))
-        t.start()
+        # # 创建新线程来处理TCP连接:
+        # t = threading.Thread(target=self.confirm, args=(sock, addr))
+        # t.start()
+        self.confirm(sock, addr)
 
     def confirm(self, sock, addr):
         try:
-            print('Accept new connection from %s:%s...' % addr)
+            # print('Accept new connection from %s:%s...' % addr)
 
             data = sock.recv(1024)
             # print(data)
             data = json.loads(data.decode())
-
+            print('付款信息:')
+            print('~'*40)
+            for key in self.touse:
+                print('%s: %s' % (self.toshow.get(key), data.get(key)))
+            print('~'*40)
             # 用户确认是否付款
-            flag = input('OK?')
+            flag = input('确认支付？(yes/no)\n')
             if flag == 'yes':
                 data['ack'] = True
+                print('支付成功')
+            else:
+                print('支付失败')
 
             sock.send(json.dumps(data).encode())
             sock.close()
-            print('Connection from %s:%s closed.' % addr)
+            # print('Connection from %s:%s closed.' % addr)
 
         except Exception as msg:
             print(msg)
@@ -90,4 +118,4 @@ if __name__ == '__main__':
     # time.sleep(60)
     # user.generatePayID()
     # user.generateQRcode()
-    user.listen()
+    user.start()
