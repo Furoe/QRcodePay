@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from mylibs.constant import char_cap, required_bytes, mindex, lindex, num_list, alphanum_list, grouping_list, mode_indicator
+from MyQR.mylibs.constant import char_cap, required_bytes, mindex, lindex, num_list, alphanum_list, grouping_list, mode_indicator
 
 # ecl: Error Correction Level(L,M,Q,H)
 def encode(ver, ecl, str):
@@ -13,7 +13,7 @@ def encode(ver, ecl, str):
 
     ver, mode = analyse(ver, ecl, str)
 
-    print('line 16: mode:', mode)
+    # print('line 16: mode:', mode)
 
     code = mode_indicator[mode] + get_cci(ver, mode, str) + mode_encoding[mode](str)
 

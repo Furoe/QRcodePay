@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from mylibs import theqrmodule
+from MyQR.mylibs import theqrmodule
 from PIL import Image
 
 # Positional parameters
